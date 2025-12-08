@@ -31,7 +31,18 @@ async function run() {
     const scholarshipCollection = db.collection("scholarships");
 
     //users apis
-    app.get("/users", async (req, res) => {});
+    app.get("/users", async (req, res) => {
+      const { email } = req.query;
+      let query = {};
+
+      if (email) {
+        query = { email };
+      }
+
+      const cursor = usersCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -66,7 +77,7 @@ async function run() {
     //payment related apis
     app.post("/create-checkout-sessions", async (req, res) => {
       const paymentInfo = req.body;
-      const amount = parseInt(paymentInfo.tuitionFees) * 100;
+      const amount = parseInt(paymentInfo.applicationFee) * 100;
       const session = await stripe.checkout.sessions.create({
         line_items: [
           {
