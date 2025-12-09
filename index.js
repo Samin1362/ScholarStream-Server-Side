@@ -121,6 +121,63 @@ async function run() {
       res.send({ message: "Payment status updated to paid", result });
     });
 
+    //reviews apis
+    app.get("/reviews", async (req, res) => {
+      const { email } = req.query;
+      let query = {};
+      if (email) {
+        query = { email: email };
+      }
+
+      const cursor = reviewsCollections.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      review.createdAt = new Date();
+      const result = await reviewsCollections.insertOne(review);
+      res.send(result);
+    });
+
+    app.delete("/reviews/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await reviewsCollections.deleteOne(query);
+      if (result.deletedCount === 1) {
+        res.send({ success: true, message: "Review Deleted" });
+      } else {
+        res.status(404).send({ success: false, message: "Review not found." });
+      }
+    });
+
+    app.patch("/reviews/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const { ratingPoint, reviewComment } = req.body;
+
+      const updatedField = {};
+
+      if (ratingPoint !== undefined) {
+        updatedField.ratingPoint = ratingPoint;
+      }
+
+      if (reviewComment !== undefined) {
+        updatedField.reviewComment = reviewComment;
+      }
+
+      if (Object.keys(updatedField).length === 0) {
+        return res.status(400).send({ message: "No valid fields provided" });
+      }
+
+      const result = await reviewsCollections.updateOne(query, {
+        $set: updatedField,
+      });
+
+      res.send(result);
+    });
+
     //scholarship apis
     app.get("/scholarships", async (req, res) => {
       const { email } = req.query;
