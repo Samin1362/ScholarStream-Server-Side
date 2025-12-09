@@ -29,6 +29,8 @@ async function run() {
     const db = client.db("scholar_stream_db");
     const usersCollection = db.collection("users");
     const scholarshipCollection = db.collection("scholarships");
+    const applicationsCollection = db.collection("applications");
+    const reviewsCollections = db.collection("reviews");
 
     //users apis
     app.get("/users", async (req, res) => {
@@ -52,9 +54,61 @@ async function run() {
       res.send(result);
     });
 
+    //applications apis
+
+    app.get("/applications", async (req, res) => {
+      const { email } = req.query;
+      let query = {};
+
+      if (email) {
+        query = { userEmail: email };
+      }
+
+      const cursor = applicationsCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.post("/applications", async (req, res) => {
+      const application = req.body;
+      application.paymentStatus = "unpaid";
+      application.enrollmentStatus = "pending";
+      application.feedback = "";
+      application.createdAt = new Date();
+      const result = applicationsCollection.insertOne(application);
+      res.send(result);
+    });
+
+    app.patch("/applications/payment-done", async (req, res) => {
+      const { id } = req.body;
+      const query = { _id: new ObjectId(id) };
+
+      const result = await applicationsCollection.updateOne(query, {
+        $set: { paymentStatus: "paid" },
+      });
+
+      if (result.matchedCount === 0) {
+        return res.status(404).send({ message: "Application not found" });
+      }
+
+      if (result.modifiedCount === 0) {
+        return res.status(400).send({
+          message: "Payment status already updated or no changes made",
+        });
+      }
+
+      res.send({ message: "Payment status updated to paid", result });
+    });
+
     //scholarship apis
     app.get("/scholarships", async (req, res) => {
-      const query = {};
+      const { email } = req.query;
+      let query = {};
+
+      if (email) {
+        query = { "studentsApplied.email": email };
+      }
+
       const cursor = scholarshipCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
@@ -69,6 +123,7 @@ async function run() {
 
     app.post("/scholarships", async (req, res) => {
       const scholarship = req.body;
+      scholarship.studentsApplied = [];
       scholarship.createdAt = new Date();
       const result = await scholarshipCollection.insertOne(scholarship);
       res.send(result);
@@ -93,10 +148,10 @@ async function run() {
         ],
         customer_email: paymentInfo.email,
         metadata: {
-          scholarshipId: paymentInfo.id,
+          applicationId: paymentInfo.id,
         },
         mode: "payment",
-        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success/${paymentInfo.id}`,
         cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
       });
 
