@@ -69,6 +69,27 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/applications/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await applicationsCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.delete("/applications/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await applicationsCollection.deleteOne(query);
+
+      if (result.deletedCount === 1) {
+        res.send({ success: true, message: "Application deleted" });
+      } else {
+        res
+          .status(404)
+          .send({ success: false, message: "Application not found." });
+      }
+    });
+
     app.post("/applications", async (req, res) => {
       const application = req.body;
       application.paymentStatus = "unpaid";
