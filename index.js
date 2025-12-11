@@ -100,6 +100,32 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/applications/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const { feedback, enrollmentStatus } = req.body;
+
+      const updatedFields = {};
+
+      if (feedback) {
+        updatedFields.feedback = feedback;
+      }
+
+      if (enrollmentStatus) {
+        updatedFields.enrollmentStatus = enrollmentStatus;
+      }
+
+      if (Object.keys(updatedFields).length === 0) {
+        return res.status(400).send({ message: "No valid fields provided" });
+      }
+
+      const result = await applicationsCollection.updateOne(query, {
+        $set: updatedFields,
+      });
+
+      res.send(result);
+    });
+
     app.patch("/applications/payment-done", async (req, res) => {
       const { id } = req.body;
       const query = { _id: new ObjectId(id) };
@@ -193,7 +219,7 @@ async function run() {
     });
 
     app.get("/scholarships/:id", async (req, res) => {
-      const id = req.params.id;
+      const { id } = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await scholarshipCollection.findOne(query);
       res.send(result);
@@ -201,10 +227,83 @@ async function run() {
 
     app.post("/scholarships", async (req, res) => {
       const scholarship = req.body;
-      scholarship.studentsApplied = [];
       scholarship.createdAt = new Date();
       const result = await scholarshipCollection.insertOne(scholarship);
       res.send(result);
+    });
+
+    app.delete("/scholarships/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+
+      const result = await scholarshipCollection.deleteOne(query);
+
+      if (result.deletedCount === 1) {
+        res.send({ success: true, message: "Scholarship Deleted." });
+      } else {
+        res
+          .status(404)
+          .send({ success: false, message: "Scholarship not found." });
+      }
+    });
+
+    app.patch("/scholarships/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const { scholarshipName, universityName, image, country, city, degree, scholarshipCategory, subjectCategory, worldRank, tuitionFees, applicationFee } = req.body;
+
+      const updatedFields = {};
+
+      if(scholarshipName) {
+        updatedFields.scholarshipName = scholarshipName;
+      }
+
+      if(universityName) {
+        updatedFields.universityName = universityName;
+      }
+
+      if(image) {
+        updatedFields.image = image;
+      }
+
+      if(country) {
+        updatedFields.country = country;
+      }
+
+      if(city) {
+        updatedFields.city = city;
+      }
+
+      if(degree) {
+        updatedFields.degree = degree;
+      }
+
+      if(scholarshipCategory) {
+        updatedFields.scholarshipCategory = scholarshipCategory;
+      }
+
+      if(subjectCategory) {
+        updatedFields.subjectCategory = subjectCategory;
+      }
+
+      if(worldRank) {
+        updatedFields.worldRank = worldRank;
+      }
+
+      if(tuitionFees) {
+        updatedFields.tuitionFees = tuitionFees;
+      }
+
+      if(applicationFee) {
+        updatedFields.applicationFee = applicationFee;
+      }
+
+      const result = await scholarshipCollection.updateOne(query, {
+        $set: updatedFields,
+      })
+
+      res.send(result);
+
     });
 
     //payment related apis
