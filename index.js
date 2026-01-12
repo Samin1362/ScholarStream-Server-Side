@@ -506,7 +506,7 @@ app.get("/scholarships", async (req, res) => {
   }
 });
 
-app.get("/scholarships/:id", verifyFBToken, async (req, res) => {
+app.get("/scholarships/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const query = { _id: new ObjectId(id) };
